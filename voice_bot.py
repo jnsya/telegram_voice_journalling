@@ -4,6 +4,7 @@ import whisper
 from telegram import Update
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
 from dotenv import load_dotenv
+import time
 
 # Load environment variables
 load_dotenv()
@@ -24,11 +25,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process received voice notes."""
     # Send initial status
-    status_message = await update.message.reply_text("yo Receiving your voice note...")
+    status_message = await update.message.reply_text("Receiving your voice note...")
+    start_time = time.time()
 
     try:
         # Get voice note file
         voice_note = await update.message.voice.get_file()
+        file_info_time = time.time()
+        print(f"Getting file info took: {file_info_time - start_time:.2f} seconds")
         
         # Generate unique filename
         file_path = VOICE_NOTES_DIR / f"voice_{update.message.message_id}.ogg"
@@ -36,14 +40,20 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Download the voice note
         await status_message.edit_text("Downloading voice note...")
         await voice_note.download_to_drive(file_path)
+        download_time = time.time()
+        print(f"Downloading took: {download_time - file_info_time:.2f} seconds")
 
         # Transcribe the audio
         await status_message.edit_text("Transcribing...")
+        transcribe_start = time.time()
         result = model.transcribe(str(file_path))
         transcription = result["text"]
+        transcribe_end = time.time()
+        print(f"Transcription took: {transcribe_end - transcribe_start:.2f} seconds")
 
         # Send transcription back to user
         await status_message.edit_text(f"Transcription:\n\n{transcription}")
+        print(f"Total processing time: {transcribe_end - start_time:.2f} seconds")
 
         # Clean up - delete the temporary file
         os.remove(file_path)
