@@ -128,7 +128,7 @@ Planned features for future versions:
 - Integration with Obsidian for saving transcriptions as markdown files
 - Summaries using Claude API
 - Metadata support (timestamps, categories)
-ad
+
 ## License
 
 [MIT License](LICENSE)
