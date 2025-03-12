@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Whisper model (options are: tiny, base, small, medium, large)
-model = whisper.load_model("medium")
+model = whisper.load_model("tiny")
 
 # Create directory for temporary voice note storage
 VOICE_NOTES_DIR = Path("voice_notes")
