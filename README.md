@@ -5,7 +5,7 @@ A Telegram bot that automatically transcribes voice messages using OpenAI's Whis
 ## Features
 
 - Receives voice messages from Telegram users
-- Transcribes audio using OpenAI's Whisper (runs locally on your machine)
+- Transcribes audio using OpenAI's Whisper (runs locally)
 - Replies with the transcribed text
 - Simple setup and configuration
 
@@ -128,7 +128,7 @@ Planned features for future versions:
 - Integration with Obsidian for saving transcriptions as markdown files
 - Summaries using Claude API
 - Metadata support (timestamps, categories)
-
+ad
 ## License
 
 [MIT License](LICENSE)
