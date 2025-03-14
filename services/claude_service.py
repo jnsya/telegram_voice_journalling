@@ -22,9 +22,13 @@ async def get_reflection(transcription):
         
         prompt = f"""You are a reflective journaling assistant. I'll share a transcribed voice note.
 Please:
-1. Provide a concise summary (2-3 sentences)
-2. Identify a potential blindspot or assumption
+1. Provide a concise & empathetic summary (2-3 sentences), as if you're a therapist mirroring a client's words
+2. Identify a potential blindspot or assumption - something that the user might not have considered
 3. Offer one thoughtful question for further reflection
+
+You should respond as if you're talking directly to the user.
+You should be empathetic and understanding.
+You should be with the user in their world, but also help them see new perspectives.
 
 Here's the transcribed voice note:
 {transcription}"""
@@ -62,8 +66,8 @@ async def get_review_summary(messages, time_period):
         prompt = f"""You are a reflective journaling assistant. I'll share multiple voice note transcriptions from {time_period}.
 Please provide:
 1. A concise summary of the main themes and topics (3-4 sentences)
-2. Identify 2-3 patterns, insights, or connections between entries
-3. Offer one thoughtful question for further reflection based on these entries
+2. Identify 2-3 patterns, insights, or connections between entries. This can be as simple as noticing a pattern, or identifying a blindspot or key assumption the user is making.
+3. Offer one or two thoughtful questions for further reflection based on these entries
 
 Here are the transcribed voice notes from {time_period}:
 {all_transcriptions}"""

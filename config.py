@@ -16,12 +16,12 @@ AUTHORIZED_USER_IDS = [int(id_str) for id_str in authorized_ids_str.split(",") i
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Whisper model configuration
-WHISPER_MODEL = "tiny"  # Options: tiny, base, small, medium, large
+WHISPER_MODEL = "medium"  # Options: tiny, base, small, medium, large
 WHISPER_DEVICE = "cpu"
 WHISPER_COMPUTE_TYPE = "int8"
 
 # Claude model configuration
-CLAUDE_MODEL = "claude-3-haiku-20240307"
+CLAUDE_MODEL = "claude-3-5-haiku-20241022"
 CLAUDE_MAX_TOKENS = 1000
 CLAUDE_TEMPERATURE = 0.7
 CLAUDE_REVIEW_MAX_TOKENS = 1500
