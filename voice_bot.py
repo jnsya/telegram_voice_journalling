@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import whisper
+from faster_whisper import WhisperModel
 from telegram import Update
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
 from dotenv import load_dotenv
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Initialize Whisper model (options are: tiny, base, small, medium, large)
-model = whisper.load_model("tiny")
+model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
 # Create directory for temporary voice note storage
 VOICE_NOTES_DIR = Path("voice_notes")
@@ -54,8 +54,8 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Transcribe the audio
         await status_message.edit_text("Transcribing...")
         transcribe_start = time.time()
-        result = model.transcribe(str(file_path))
-        transcription = result["text"]
+        segments, info = model.transcribe(str(file_path))
+        transcription = " ".join([segment.text for segment in segments])
         transcribe_end = time.time()
         logger.info(f"Transcription took: {transcribe_end - transcribe_start:.2f} seconds")
 
