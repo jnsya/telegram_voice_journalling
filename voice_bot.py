@@ -21,11 +21,16 @@ load_dotenv()
 # Get authorized user ID from environment variables
 AUTHORIZED_USER_ID = int(os.getenv("AUTHORIZED_USER_ID", "0"))
 
+# Get Anthropic API key
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+if not ANTHROPIC_API_KEY:
+    logger.error("ANTHROPIC_API_KEY not found in environment variables")
+
 # Initialize Whisper model (options are: tiny, base, small, medium, large)
 model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
 # Initialize Claude client
-claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+claude_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 # Create directory for temporary voice note storage
 VOICE_NOTES_DIR = Path("voice_notes")
@@ -49,6 +54,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_claude_response(transcription):
     """Get reflective insights from Claude based on the transcription."""
     try:
+        # Check if API key is available
+        if not ANTHROPIC_API_KEY:
+            logger.error("Cannot call Claude API: No API key available")
+            return f"I transcribed your message, but couldn't generate reflections (Claude API key not configured).\n\nTranscription:\n{transcription}"
+            
         prompt = f"""You are a reflective journaling assistant. I'll share a transcribed voice note.
 Please:
 1. Provide a concise summary (2-3 sentences)
@@ -58,6 +68,8 @@ Please:
 Here's the transcribed voice note:
 {transcription}"""
 
+        logger.info(f"Calling Claude API with prompt length: {len(prompt)} characters")
+        
         message = claude_client.messages.create(
             model="claude-3-haiku-20240307",
             max_tokens=1000,
@@ -71,7 +83,7 @@ Here's the transcribed voice note:
         return message.content[0].text
     except Exception as e:
         logger.error(f"Error getting Claude response: {str(e)}")
-        return f"I transcribed your message, but couldn't generate reflections (Claude API error).\n\nTranscription:\n{transcription}"
+        return f"I transcribed your message, but couldn't generate reflections (Claude API error: {str(e)}).\n\nTranscription:\n{transcription}"
 
 async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process received voice notes."""
