@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Get authorized user ID from environment variables
-AUTHORIZED_USER_ID = int(os.getenv("AUTHORIZED_USER_ID", "0"))
+# Get authorized user IDs from environment variables
+# Format in .env file: AUTHORIZED_USER_IDS=123456789,987654321
+authorized_ids_str = os.getenv("AUTHORIZED_USER_IDS", "")
+AUTHORIZED_USER_IDS = [int(id_str) for id_str in authorized_ids_str.split(",") if id_str.strip().isdigit()]
 
 # Initialize Whisper model (options are: tiny, base, small, medium, large)
 model = WhisperModel("tiny", device="cpu", compute_type="int8")
@@ -35,7 +37,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /start is issued."""
     user_id = update.effective_user.id
     
-    if AUTHORIZED_USER_ID != 0 and user_id != AUTHORIZED_USER_ID:
+    # Check if user is authorized
+    if user_id not in AUTHORIZED_USER_IDS:
         await update.message.reply_text(
             "Sorry, you are not authorized to use this bot."
         )
@@ -78,7 +81,7 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
     # Check if user is authorized
-    if AUTHORIZED_USER_ID != 0 and user_id != AUTHORIZED_USER_ID:
+    if user_id not in AUTHORIZED_USER_IDS:
         await update.message.reply_text(
             "Sorry, you are not authorized to use this bot."
         )
