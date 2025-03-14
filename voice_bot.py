@@ -6,6 +6,7 @@ from telegram.ext import Application, MessageHandler, CommandHandler, filters, C
 from dotenv import load_dotenv
 import time
 import logging
+import anthropic
 
 # Configure logging at the top of your file
 logging.basicConfig(
@@ -23,6 +24,9 @@ AUTHORIZED_USER_ID = int(os.getenv("AUTHORIZED_USER_ID", "0"))
 # Initialize Whisper model (options are: tiny, base, small, medium, large)
 model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
+# Initialize Claude client
+claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
 # Create directory for temporary voice note storage
 VOICE_NOTES_DIR = Path("voice_notes")
 VOICE_NOTES_DIR.mkdir(exist_ok=True)
@@ -39,8 +43,35 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     await update.message.reply_text(
-        "Hi! I'm a voice note transcription bot. Send me a voice message and I'll transcribe it for you!"
+        "Hi! I'm a voice note reflection bot. Send me a voice message and I'll transcribe it and provide reflective insights!"
     )
+
+async def get_claude_response(transcription):
+    """Get reflective insights from Claude based on the transcription."""
+    try:
+        prompt = f"""You are a reflective journaling assistant. I'll share a transcribed voice note.
+Please:
+1. Provide a concise summary (2-3 sentences)
+2. Identify a potential blindspot or assumption
+3. Offer one thoughtful question for further reflection
+
+Here's the transcribed voice note:
+{transcription}"""
+
+        message = claude_client.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=1000,
+            temperature=0.7,
+            system="You are a helpful, empathetic journaling assistant that provides thoughtful reflections.",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        return message.content[0].text
+    except Exception as e:
+        logger.error(f"Error getting Claude response: {str(e)}")
+        return f"I transcribed your message, but couldn't generate reflections (Claude API error).\n\nTranscription:\n{transcription}"
 
 async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process received voice notes."""
@@ -81,15 +112,23 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         transcribe_end = time.time()
         logger.info(f"Transcription took: {transcribe_end - transcribe_start:.2f} seconds")
 
-        # Send transcription back to user
-        await status_message.edit_text(f"Transcription:\n\n{transcription}")
-        print(f"Total processing time: {transcribe_end - start_time:.2f} seconds")
+        # Get reflective insights from Claude
+        await status_message.edit_text("Generating reflective insights...")
+        claude_start = time.time()
+        claude_response = await get_claude_response(transcription)
+        claude_end = time.time()
+        logger.info(f"Claude API took: {claude_end - claude_start:.2f} seconds")
+
+        # Send Claude's response back to user
+        await status_message.edit_text(f"{claude_response}\n\n---\nOriginal transcription: \"{transcription}\"")
+        logger.info(f"Total processing time: {claude_end - start_time:.2f} seconds")
 
         # Clean up - delete the temporary file
         os.remove(file_path)
 
     except Exception as e:
         await status_message.edit_text(f"Sorry, an error occurred: {str(e)}")
+        logger.error(f"Error processing voice note: {str(e)}")
 
 def main():
     """Start the bot."""

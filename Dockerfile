@@ -15,5 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
+# Create directory for voice notes
+RUN mkdir -p voice_notes
+
 # Run the bot
 CMD ["python", "voice_bot.py"]

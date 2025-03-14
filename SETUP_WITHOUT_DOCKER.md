@@ -7,6 +7,7 @@ This guide explains how to set up and run the Telegram Voice Transcription Bot d
 - Python 3.8 or higher
 - FFmpeg (required for audio processing)
 - A Telegram account (to create a bot)
+- An Anthropic API key for Claude ([Get API Key](https://console.anthropic.com/))
 
 ## Installation Steps
 
@@ -60,17 +61,16 @@ Create a `.env` file in the project directory:
 ```bash
 # Create and open the .env file
 touch .env
-# Edit the file and add your bot token and user ID
+# Edit the file and add your bot token, user ID, and Anthropic API key
 echo "TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here" > .env
 echo "AUTHORIZED_USER_ID=your_telegram_user_id_here" >> .env
+echo "ANTHROPIC_API_KEY=your_anthropic_api_key_here" >> .env
 ```
 
-Replace `your_telegram_bot_token_here` with the token you received from BotFather.
-
-To find your Telegram user ID:
-1. Send a message to [@userinfobot](https://t.me/userinfobot) on Telegram
-2. The bot will reply with your user ID
-3. Add this ID to your .env file as AUTHORIZED_USER_ID
+Replace the placeholder values with your actual credentials:
+- `your_telegram_bot_token_here`: The token you received from BotFather
+- `your_telegram_user_id_here`: Your Telegram user ID (find it by messaging [@userinfobot](https://t.me/userinfobot))
+- `your_anthropic_api_key_here`: Your Anthropic API key for Claude
 
 ### 6. Run the bot
 
@@ -84,5 +84,6 @@ python voice_bot.py
 
 1. **"No module named 'faster_whisper'"**: Make sure you've installed all dependencies with `pip install -r requirements.txt`
 2. **FFmpeg errors**: Ensure FFmpeg is installed correctly on your system
-3. **Connection timeout**: Check your internet connection and verify your bot token is correct
-4. **NumPy compatibility issues**: If you encounter NumPy errors, try `pip install numpy==1.26.4` to downgrade to a compatible version 
+3. **Claude API errors**: Check your Anthropic API key and ensure you have sufficient quota
+4. **Connection timeout**: Check your internet connection and verify your bot token is correct
+5. **NumPy compatibility issues**: If you encounter NumPy errors, try `pip install numpy==1.26.4` to downgrade to a compatible version 
