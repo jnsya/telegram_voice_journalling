@@ -10,6 +10,8 @@ A Telegram bot that automatically transcribes voice messages using OpenAI's Whis
   - Concise summary of your voice note
   - Identification of potential blindspots
   - Thoughtful questions for further reflection
+- Stores message history in a local database
+- Provides commands to review past entries
 - Replies with both the AI-generated insights and original transcription
 - Simple authentication to restrict usage to authorized users
 - Simple setup and configuration using Docker
@@ -47,7 +49,7 @@ Create a `.env` file in the project directory:
 touch .env
 # Edit the file and add your bot token, user ID, and Anthropic API key
 echo "TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here" > .env
-echo "AUTHORIZED_USER_ID=your_telegram_user_id_here" >> .env
+echo "AUTHORIZED_USER_IDS=your_telegram_user_id_here" >> .env
 echo "ANTHROPIC_API_KEY=your_anthropic_api_key_here" >> .env
 ```
 
@@ -65,15 +67,19 @@ This will restrict the bot to only respond to your messages.
 docker build -t telegram-voice-bot .
 
 # Run the container
-docker run --env-file .env telegram-voice-bot
+docker run --env-file .env -v $(pwd)/messages.db:/app/messages.db telegram-voice-bot
 
 # Mount your local code directory to see changes without rebuilding:
 docker run --env-file .env -v $(pwd):/app telegram-voice-bot
 ```
 
+Note: The `-v $(pwd)/messages.db:/app/messages.db` option ensures that your message database persists between container restarts.
+
 That's it! Your bot is now running and ready to transcribe voice messages and provide reflective insights.
 
 ## Usage
+
+### Basic Usage
 
 1. Open Telegram and search for your bot using its username
 2. Start a chat with your bot
@@ -82,7 +88,16 @@ That's it! Your bot is now running and ready to transcribe voice messages and pr
    - Transcribe your audio
    - Generate reflective insights using Claude
    - Reply with both the insights and original transcription
+   - Store the message in its database with a reference ID
 
+### Commands
+
+The bot supports the following commands:
+
+- `/start` - Introduction and list of available commands
+- `/history [n]` - Show your last n entries (default 5)
+- `/entry MSG123` - Show a specific entry by reference ID
+- `/weekly` - Show all entries from the past week
 
 ## How It Works
 
@@ -91,8 +106,22 @@ That's it! Your bot is now running and ready to transcribe voice messages and pr
 3. The audio is processed using OpenAI's Whisper model (running locally)
 4. The transcription is sent to Claude AI with a prompt for reflective analysis
 5. Claude generates a summary, identifies potential blindspots, and offers a question
-6. The bot sends Claude's response along with the original transcription back to the user
-7. The temporary audio file is deleted
+6. The bot stores both the transcription and Claude's response in a SQLite database
+7. The bot sends Claude's response along with the original transcription back to the user
+8. The temporary audio file is deleted
+
+## Database
+
+The bot uses a SQLite database to store message history. The database includes:
+
+- Reference ID (e.g., MSG123) for easy retrieval
+- User ID to associate messages with specific users
+- Original transcription
+- Claude's response
+- Timestamp
+- Audio metadata (length, file ID)
+
+This allows you to review past entries and potentially analyze patterns in your voice notes over time.
 
 ## Customization
 
@@ -133,6 +162,7 @@ model="claude-3-sonnet-20240229",  # Balance of capabilities and speed
 3. **Claude API errors**: Check your Anthropic API key and ensure you have sufficient quota
 4. **Permission errors**: On Linux, you might need to run Docker with sudo
 5. **Connection timeout**: Check your internet connection
+6. **Database issues**: Ensure the database file is writable by the container
 
 ## Alternative Setup (without Docker)
 
@@ -142,7 +172,8 @@ If you prefer not to use Docker, see the [detailed setup instructions](SETUP_WIT
 
 Planned features for future versions:
 - Integration with Obsidian for saving transcriptions as markdown files
-- Metadata support (timestamps, categories)
+- Weekly summaries of all your entries
+- Topic clustering and trend analysis
 - Custom prompts for different types of reflections
 
 ## License

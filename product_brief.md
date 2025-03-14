@@ -4,12 +4,12 @@
 - Telegram bot that receives voice notes
 - Transcribes voice notes using Whisper API
 - Returns transcription to the user
+- Send transcriptions to Claude API for insights with prompt: "Return a short summary of this, and then add some reflection (like a blindspot you think the user has) and question for further reflection"
+- Return Claude's insights to user instead of raw transcription
 
 ## New Features to Implement
 
 ### Core Functionality
-- Send transcriptions to Claude API for insights with prompt: "Return a short summary of this, and then add some reflection (like a blindspot you think the user has) and question for further reflection"
-- Return Claude's insights to user instead of raw transcription
 - Implement SQLite database to store:
   - User messages (voice note transcriptions)
   - Claude responses
