@@ -1,9 +1,18 @@
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -15,27 +24,23 @@ lib64/
 parts/
 sdist/
 var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
+# Logs
+logs/
+*.log
+
+# Temporary files
+voice_notes/
+temp/
+
 # Virtual Environment
 venv/
-.venv/
-env/
 ENV/
 
-# Environment variables
-.env
-
-# Telegram bot specific
-voice_notes/
-
-# Whisper model files (can be large)
-*.pt
-
-# IDE specific files
+# IDE files
 .idea/
 .vscode/
 *.swp
@@ -43,7 +48,4 @@ voice_notes/
 
 # OS specific files
 .DS_Store
-Thumbs.db
-
-# Logs
-*.log 
+Thumbs.db 

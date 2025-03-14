@@ -46,11 +46,7 @@ Create a `.env` file in the project directory:
 
 ```bash
 # Create and open the .env file
-touch .env
-# Edit the file and add your bot token, user ID, and Anthropic API key
-echo "TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here" > .env
-echo "AUTHORIZED_USER_IDS=your_telegram_user_id_here" >> .env
-echo "ANTHROPIC_API_KEY=your_anthropic_api_key_here" >> .env
+cp .env.example .env
 ```
 
 Replace the placeholder values with your actual credentials:
@@ -135,30 +131,20 @@ This allows you to review past entries and potentially analyze patterns in your 
 
 ### Changing the Whisper Model
 
-The bot uses the "tiny" Whisper model by default. You can change this to a larger model for better accuracy (at the cost of more resources):
+The bot uses the "tiny" Whisper model by default. You can change this in `config.py`:
 
 ```python
-# In voice_bot.py, change:
-model = WhisperModel("tiny", device="cpu", compute_type="int8")
-
-# To one of these options (in increasing order of accuracy and resource usage):
-model = WhisperModel("base", device="cpu", compute_type="int8")
-model = WhisperModel("small", device="cpu", compute_type="int8")
-model = WhisperModel("medium", device="cpu", compute_type="int8")
-model = WhisperModel("large", device="cpu", compute_type="int8")
+# Whisper model configuration
+WHISPER_MODEL = "tiny"  # Options: tiny, base, small, medium, large
 ```
 
 ### Changing the Claude Model
 
-The bot uses Claude 3 Haiku by default. You can change this to a different Claude model:
+The bot uses Claude 3 Haiku by default. You can change this in `config.py`:
 
 ```python
-# In voice_bot.py, find:
-model="claude-3-haiku-20240307",
-
-# And change it to one of these options:
-model="claude-3-opus-20240229",  # Most capable, slower
-model="claude-3-sonnet-20240229",  # Balance of capabilities and speed
+# Claude model configuration
+CLAUDE_MODEL = "claude-3-haiku-20240307"
 ```
 
 ## Troubleshooting

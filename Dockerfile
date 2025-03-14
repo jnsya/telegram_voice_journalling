@@ -1,14 +1,13 @@
-FROM python:3.10-slim
-
-# Install FFmpeg
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -16,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create directory for voice notes
-RUN mkdir -p voice_notes
+RUN mkdir -p voice_notes logs
 
 # Run the bot
-CMD ["python", "voice_bot.py"]
+CMD ["python", "main.py"]
