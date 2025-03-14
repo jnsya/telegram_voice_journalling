@@ -100,6 +100,8 @@ The bot supports the following commands:
 - `/weekly` - Show all entries from the past week
 - `/random` - Show a random entry from your history
 - `/delete MSG123` - Delete a specific entry by reference ID
+- `/review_week` - Get AI summary of your entries from the past week
+- `/review_today` - Get AI summary of your entries from today
 
 ## How It Works
 
@@ -111,6 +113,10 @@ The bot supports the following commands:
 6. The bot stores both the transcription and Claude's response in a SQLite database
 7. The bot sends Claude's response along with the original transcription back to the user
 8. The temporary audio file is deleted
+
+The bot also provides review functionality:
+- `/review_week` analyzes all your entries from the past week, identifying patterns and themes
+- `/review_today` summarizes your entries from the current day, offering consolidated insights
 
 ## Database
 

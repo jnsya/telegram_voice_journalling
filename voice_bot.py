@@ -170,6 +170,64 @@ def get_weekly_messages(user_id):
     
     return messages
 
+def get_today_messages(user_id):
+    """Get all messages from today for a user."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Calculate start of today
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_str = today_start.strftime('%Y-%m-%d %H:%M:%S')
+    
+    cursor.execute('''
+    SELECT reference_id, transcription, claude_response, created_at
+    FROM messages
+    WHERE user_id = ? AND created_at >= ?
+    ORDER BY created_at DESC
+    ''', (user_id, today_start_str))
+    
+    messages = cursor.fetchall()
+    conn.close()
+    
+    return messages
+
+async def generate_review_summary(messages, time_period):
+    """Generate a summary of multiple entries using Claude."""
+    if not messages:
+        return f"You don't have any entries from {time_period}."
+    
+    # Extract transcriptions from messages
+    transcriptions = []
+    for _, transcription, _, _ in messages:
+        transcriptions.append(transcription)
+    
+    all_transcriptions = "\n\n".join([f"Entry {i+1}: {text}" for i, text in enumerate(transcriptions)])
+    
+    try:
+        prompt = f"""You are a reflective journaling assistant. I'll share multiple voice note transcriptions from {time_period}.
+Please provide:
+1. A concise summary of the main themes and topics (3-4 sentences)
+2. Identify 2-3 patterns, insights, or connections between entries
+3. Offer one thoughtful question for further reflection based on these entries
+
+Here are the transcribed voice notes from {time_period}:
+{all_transcriptions}"""
+
+        message = claude_client.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=1500,
+            temperature=0.7,
+            system="You are a helpful, empathetic journaling assistant that provides thoughtful reflections on multiple journal entries.",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        return f"📝 Review of your entries from {time_period}:\n\n{message.content[0].text}"
+    except Exception as e:
+        logger.error(f"Error getting Claude review response: {str(e)}")
+        return f"I found {len(messages)} entries from {time_period}, but couldn't generate a review (Claude API error)."
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /start is issued."""
     user_id = update.effective_user.id
@@ -189,7 +247,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/entry MSG123 - Show a specific entry by reference ID\n"
         "/weekly - Show all entries from the past week\n"
         "/random - Show a random entry from your history\n"
-        "/delete MSG123 - Delete a specific entry by reference ID"
+        "/delete MSG123 - Delete a specific entry by reference ID\n"
+        "/review_week - Get AI summary of your entries from the past week\n"
+        "/review_today - Get AI summary of your entries from today"
     )
 
 async def get_claude_response(transcription):
@@ -460,6 +520,70 @@ async def weekly_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(response)
 
+async def review_week_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generate a review of the past week's entries."""
+    user_id = update.effective_user.id
+    
+    # Check if user is authorized
+    if AUTHORIZED_USER_IDS and user_id not in AUTHORIZED_USER_IDS:
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this bot."
+        )
+        logger.warning(f"Unauthorized access attempt by user ID: {user_id}")
+        return
+    
+    # Send initial status
+    status_message = await update.message.reply_text("Generating your weekly review...")
+    
+    # Get messages from the past week
+    messages = get_weekly_messages(user_id)
+    
+    if not messages:
+        await status_message.edit_text("You don't have any entries from the past week.")
+        return
+    
+    # Generate review using Claude
+    review = await generate_review_summary(messages, "the past week")
+    
+    # Add reference IDs at the end
+    ref_ids = [ref_id for ref_id, _, _, _ in messages]
+    ref_ids_text = ", ".join(ref_ids)
+    review += f"\n\nEntries included: {ref_ids_text}"
+    
+    await status_message.edit_text(review)
+
+async def review_today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generate a review of today's entries."""
+    user_id = update.effective_user.id
+    
+    # Check if user is authorized
+    if AUTHORIZED_USER_IDS and user_id not in AUTHORIZED_USER_IDS:
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this bot."
+        )
+        logger.warning(f"Unauthorized access attempt by user ID: {user_id}")
+        return
+    
+    # Send initial status
+    status_message = await update.message.reply_text("Generating your daily review...")
+    
+    # Get messages from today
+    messages = get_today_messages(user_id)
+    
+    if not messages:
+        await status_message.edit_text("You don't have any entries from today.")
+        return
+    
+    # Generate review using Claude
+    review = await generate_review_summary(messages, "today")
+    
+    # Add reference IDs at the end
+    ref_ids = [ref_id for ref_id, _, _, _ in messages]
+    ref_ids_text = ", ".join(ref_ids)
+    review += f"\n\nEntries included: {ref_ids_text}"
+    
+    await status_message.edit_text(review)
+
 def main():
     """Start the bot."""
     # Initialize database
@@ -475,6 +599,8 @@ def main():
     application.add_handler(CommandHandler("weekly", weekly_command))
     application.add_handler(CommandHandler("random", random_command))
     application.add_handler(CommandHandler("delete", delete_command))
+    application.add_handler(CommandHandler("review_week", review_week_command))
+    application.add_handler(CommandHandler("review_today", review_today_command))
     application.add_handler(MessageHandler(filters.VOICE, process_voice))
 
     # Start the Bot

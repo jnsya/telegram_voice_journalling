@@ -18,8 +18,8 @@
   - Timestamps
 
 ### User Commands
-- `/reviewthisweek` - Analyzes all entries from the current week, sends to Claude with prompt: "Here are some journal messages from a user. Please summarise them, noting any connections between the messages, and give some reflection back"
-- `/reviewtoday` - Same as above but only for today's entries
+- `/review_week` - Analyzes all entries from the current week, sends to Claude with prompt: "Here are some journal messages from a user. Please summarise them, noting any connections between the messages, and give some reflection back"
+- `/review_today` - Same as above but only for today's entries
 - `/start` - Welcome message explaining how to use the bot and its features
 - `/help` - Comprehensive list of commands and usage instructions
 
