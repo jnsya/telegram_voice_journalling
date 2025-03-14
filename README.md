@@ -11,7 +11,7 @@ A Telegram bot that automatically transcribes voice messages using OpenAI's Whis
   - Identification of potential blindspots
   - Thoughtful questions for further reflection
 - Stores message history in a local database
-- Provides commands to review past entries
+- Provides commands to review, retrieve, and manage past entries
 - Replies with both the AI-generated insights and original transcription
 - Simple authentication to restrict usage to authorized users
 - Simple setup and configuration using Docker
@@ -98,6 +98,8 @@ The bot supports the following commands:
 - `/history [n]` - Show your last n entries (default 5)
 - `/entry MSG123` - Show a specific entry by reference ID
 - `/weekly` - Show all entries from the past week
+- `/random` - Show a random entry from your history
+- `/delete MSG123` - Delete a specific entry by reference ID
 
 ## How It Works
 

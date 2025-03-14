@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import random
 from pathlib import Path
 from faster_whisper import WhisperModel
 from telegram import Update
@@ -113,6 +114,41 @@ def get_message_by_reference(user_id, reference_id):
     
     return message
 
+def get_random_message(user_id):
+    """Get a random message for a user."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    SELECT reference_id, transcription, claude_response, created_at
+    FROM messages
+    WHERE user_id = ?
+    ''', (user_id,))
+    
+    messages = cursor.fetchall()
+    conn.close()
+    
+    if not messages:
+        return None
+    
+    return random.choice(messages)
+
+def delete_message(user_id, reference_id):
+    """Delete a specific message by its reference ID."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    DELETE FROM messages
+    WHERE user_id = ? AND reference_id = ?
+    ''', (user_id, reference_id))
+    
+    deleted = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    
+    return deleted
+
 def get_weekly_messages(user_id):
     """Get all messages from the past week for a user."""
     conn = sqlite3.connect(DB_PATH)
@@ -151,7 +187,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Available commands:\n"
         "/history [n] - Show your last n entries (default 5)\n"
         "/entry MSG123 - Show a specific entry by reference ID\n"
-        "/weekly - Show all entries from the past week"
+        "/weekly - Show all entries from the past week\n"
+        "/random - Show a random entry from your history\n"
+        "/delete MSG123 - Delete a specific entry by reference ID"
     )
 
 async def get_claude_response(transcription):
@@ -327,6 +365,68 @@ async def entry_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(response)
 
+async def random_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show a random entry from the user's history."""
+    user_id = update.effective_user.id
+    
+    # Check if user is authorized
+    if AUTHORIZED_USER_IDS and user_id not in AUTHORIZED_USER_IDS:
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this bot."
+        )
+        logger.warning(f"Unauthorized access attempt by user ID: {user_id}")
+        return
+    
+    message = get_random_message(user_id)
+    
+    if not message:
+        await update.message.reply_text("You don't have any entries yet.")
+        return
+    
+    ref_id, transcription, claude_response, created_at = message
+    
+    # Format the date
+    date_str = created_at.split('.')[0] if '.' in created_at else created_at
+    
+    response = f"📝 Random Entry {ref_id} ({date_str}):\n\n"
+    response += f"Original transcription:\n\"{transcription}\"\n\n"
+    response += f"Claude's reflection:\n{claude_response}"
+    
+    await update.message.reply_text(response)
+
+async def delete_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delete a specific entry by reference ID."""
+    user_id = update.effective_user.id
+    
+    # Check if user is authorized
+    if AUTHORIZED_USER_IDS and user_id not in AUTHORIZED_USER_IDS:
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this bot."
+        )
+        logger.warning(f"Unauthorized access attempt by user ID: {user_id}")
+        return
+    
+    # Check if reference ID is provided
+    if not context.args:
+        await update.message.reply_text("Please provide a reference ID, e.g., /delete MSG123")
+        return
+    
+    reference_id = context.args[0].upper()
+    
+    # First check if the entry exists
+    message = get_message_by_reference(user_id, reference_id)
+    if not message:
+        await update.message.reply_text(f"Entry {reference_id} not found.")
+        return
+    
+    # Delete the entry
+    deleted = delete_message(user_id, reference_id)
+    
+    if deleted:
+        await update.message.reply_text(f"Entry {reference_id} has been deleted.")
+    else:
+        await update.message.reply_text(f"Failed to delete entry {reference_id}.")
+
 async def weekly_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show all entries from the past week."""
     user_id = update.effective_user.id
@@ -373,6 +473,8 @@ def main():
     application.add_handler(CommandHandler("history", history_command))
     application.add_handler(CommandHandler("entry", entry_command))
     application.add_handler(CommandHandler("weekly", weekly_command))
+    application.add_handler(CommandHandler("random", random_command))
+    application.add_handler(CommandHandler("delete", delete_command))
     application.add_handler(MessageHandler(filters.VOICE, process_voice))
 
     # Start the Bot

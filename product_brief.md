@@ -6,6 +6,7 @@
 - Returns transcription to the user
 - Send transcriptions to Claude API for insights with prompt: "Return a short summary of this, and then add some reflection (like a blindspot you think the user has) and question for further reflection"
 - Return Claude's insights to user instead of raw transcription
+- SQLite database stores all messages
 
 ## New Features to Implement
 
