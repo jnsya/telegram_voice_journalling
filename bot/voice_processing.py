@@ -4,9 +4,11 @@ import logging
 from pathlib import Path
 from telegram import Update
 from telegram.ext import ContextTypes
+from telegram.error import BadRequest
 
 from config import VOICE_NOTES_DIR
 from utils.auth import check_authorization
+from utils.text import split_text, TELEGRAM_MAX_MESSAGE_LENGTH
 from services.whisper_service import transcribe_audio
 from services.claude_service import get_reflection
 from db.models import store_message
@@ -68,18 +70,42 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             voice_file_id=voice_file_id
         )
         
-        # Send Claude's response back to user
-        await status_message.edit_text(
+        # Prepare the response message
+        full_response = (
             f"{claude_response}\n\n"
             f"---\n"
             f"Original transcription: \"{transcription}\"\n\n"
             f"Reference ID: {reference_id}"
         )
+        
+        # Check if the message is too long for Telegram
+        if len(full_response) <= TELEGRAM_MAX_MESSAGE_LENGTH:
+            # Send the full response if it's within limits
+            await status_message.edit_text(full_response)
+        else:
+            # Split the message if it's too long
+            await status_message.edit_text(
+                f"{claude_response}\n\n"
+                f"---\n"
+                f"Reference ID: {reference_id}\n\n"
+                f"Note: The transcription is too long to display here. "
+                f"Use /entry {reference_id} to view the full entry."
+            )
+            
+            # If the transcription alone is short enough, send it as a separate message
+            if len(transcription) <= TELEGRAM_MAX_MESSAGE_LENGTH - 50:  # Leave some room for formatting
+                await update.message.reply_text(f"Original transcription:\n\n\"{transcription}\"")
+            else:
+                # Split the transcription into multiple messages if needed
+                chunks = split_text(f"Original transcription:\n\n\"{transcription}\"")
+                for chunk in chunks:
+                    await update.message.reply_text(chunk)
+        
         logger.info(f"Total processing time: {claude_end - start_time:.2f} seconds")
 
         # Clean up - delete the temporary file
         os.remove(file_path)
 
     except Exception as e:
-        await status_message.edit_text(f"Sorry, an error occurred: {str(e)}")
-        logger.error(f"Error processing voice note: {str(e)}") 
+        logger.error(f"Error processing voice note: {str(e)}")
+        await status_message.edit_text(f"Sorry, an error occurred: {str(e)}") 

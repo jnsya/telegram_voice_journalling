@@ -7,6 +7,10 @@ logger = logging.getLogger(__name__)
 # Initialize Claude client
 client = None
 
+# Claude has a context window limit, so we need to limit the transcription length
+# Claude 3 Haiku has a 200K context window, but we'll be conservative
+MAX_TRANSCRIPTION_LENGTH = 32000  # Characters, not tokens
+
 def get_client():
     """Get the Claude client, initializing it if necessary."""
     global client
@@ -15,10 +19,25 @@ def get_client():
         logger.info("Claude client initialized")
     return client
 
+def truncate_transcription(transcription):
+    """Truncate transcription if it's too long for Claude."""
+    if len(transcription) <= MAX_TRANSCRIPTION_LENGTH:
+        return transcription
+    
+    # If it's too long, truncate and add a note
+    truncated = transcription[:MAX_TRANSCRIPTION_LENGTH]
+    truncated += f"\n\n[Note: Transcription was truncated from {len(transcription)} characters due to length limits]"
+    
+    logger.warning(f"Transcription truncated from {len(transcription)} to {len(truncated)} characters")
+    return truncated
+
 async def get_reflection(transcription):
     """Get reflective insights from Claude based on the transcription."""
     try:
         client = get_client()
+        
+        # Truncate transcription if necessary
+        safe_transcription = truncate_transcription(transcription)
         
         prompt = f"""You are a reflective journaling assistant. I'll share a transcribed voice note.
 Please:
@@ -31,7 +50,7 @@ You should be empathetic and understanding.
 You should be with the user in their world, but also help them see new perspectives.
 
 Here's the transcribed voice note:
-{transcription}"""
+{safe_transcription}"""
 
         message = client.messages.create(
             model=CLAUDE_MODEL,
@@ -46,7 +65,7 @@ Here's the transcribed voice note:
         return message.content[0].text
     except Exception as e:
         logger.error(f"Error getting Claude response: {str(e)}")
-        return f"I transcribed your message, but couldn't generate reflections (Claude API error).\n\nTranscription:\n{transcription}"
+        return f"I transcribed your message, but couldn't generate reflections (Claude API error).\n\nTranscription:\n{transcription[:500]}... [truncated]"
 
 async def get_review_summary(messages, time_period):
     """Generate a summary of multiple entries using Claude."""
@@ -56,9 +75,17 @@ async def get_review_summary(messages, time_period):
     # Extract transcriptions from messages
     transcriptions = []
     for _, transcription, _, _ in messages:
+        # Limit each transcription to a reasonable length
+        if len(transcription) > 5000:  # Arbitrary limit per transcription
+            transcription = transcription[:5000] + "... [truncated]"
         transcriptions.append(transcription)
     
     all_transcriptions = "\n\n".join([f"Entry {i+1}: {text}" for i, text in enumerate(transcriptions)])
+    
+    # Ensure the combined transcriptions aren't too long
+    if len(all_transcriptions) > MAX_TRANSCRIPTION_LENGTH:
+        logger.warning(f"Combined transcriptions too long ({len(all_transcriptions)} chars). Truncating.")
+        all_transcriptions = all_transcriptions[:MAX_TRANSCRIPTION_LENGTH] + "\n\n[Some entries truncated due to length limits]"
     
     try:
         client = get_client()
