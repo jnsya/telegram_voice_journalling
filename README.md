@@ -1,4 +1,4 @@
-# Telegram Voice Transcription Bot
+# Telegram AI Voice Journalling Bot
 
 A Telegram bot that automatically transcribes voice messages using OpenAI's Whisper model and provides reflective insights using Claude AI.
 
