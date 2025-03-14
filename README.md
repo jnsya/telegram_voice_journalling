@@ -5,8 +5,9 @@ A Telegram bot that automatically transcribes voice messages using OpenAI's Whis
 ## Features
 
 - Receives voice messages from Telegram users
-- Transcribes audio using OpenAI's Whisper (runs locally on your machine)
+- Transcribes audio using OpenAI's Whisper (runs locally)
 - Replies with the transcribed text
+- Simple authentication to restrict usage to authorized users
 - Simple setup and configuration
 
 ## Requirements
@@ -67,11 +68,19 @@ Create a `.env` file in the project directory:
 ```bash
 # Create and open the .env file
 touch .env
-# Edit the file and add your bot token
+# Edit the file and add your bot token and user ID
 echo "TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here" > .env
+echo "AUTHORIZED_USER_ID=your_telegram_user_id_here" >> .env
 ```
 
 Replace `your_telegram_bot_token_here` with the token you received from BotFather.
+
+To find your Telegram user ID:
+1. Send a message to [@userinfobot](https://t.me/userinfobot) on Telegram
+2. The bot will reply with your user ID
+3. Add this ID to your .env file as AUTHORIZED_USER_ID
+
+This will restrict the bot to only respond to your messages.
 
 ## Usage
 
@@ -149,7 +158,6 @@ model = whisper.load_model("large")
 ## Future Extensions
 
 Planned features for future versions:
-- Server deployment options
 - Integration with Obsidian for saving transcriptions as markdown files
 - Summaries using Claude API
 - Metadata support (timestamps, categories)

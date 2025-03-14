@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+# Get authorized user ID from environment variables
+AUTHORIZED_USER_ID = int(os.getenv("AUTHORIZED_USER_ID", "0"))
+
 # Initialize Whisper model (options are: tiny, base, small, medium, large)
 model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
@@ -26,12 +29,31 @@ VOICE_NOTES_DIR.mkdir(exist_ok=True)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /start is issued."""
+    user_id = update.effective_user.id
+    
+    if AUTHORIZED_USER_ID != 0 and user_id != AUTHORIZED_USER_ID:
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this bot."
+        )
+        logger.warning(f"Unauthorized access attempt by user ID: {user_id}")
+        return
+    
     await update.message.reply_text(
         "Hi! I'm a voice note transcription bot. Send me a voice message and I'll transcribe it for you!"
     )
 
 async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process received voice notes."""
+    user_id = update.effective_user.id
+    
+    # Check if user is authorized
+    if AUTHORIZED_USER_ID != 0 and user_id != AUTHORIZED_USER_ID:
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this bot."
+        )
+        logger.warning(f"Unauthorized access attempt by user ID: {user_id}")
+        return
+    
     # Send initial status
     status_message = await update.message.reply_text("Receiving your voice note...")
     start_time = time.time()
