@@ -8,15 +8,14 @@ A Telegram bot that automatically transcribes voice messages using OpenAI's Whis
 - Transcribes audio using OpenAI's Whisper (runs locally)
 - Replies with the transcribed text
 - Simple authentication to restrict usage to authorized users
-- Simple setup and configuration
+- Simple setup and configuration using Docker
 
 ## Requirements
 
-- Python 3.8 or higher
-- FFmpeg (required for audio processing)
+- Docker installed on your system ([Install Docker](https://docs.docker.com/get-docker/))
 - A Telegram account (to create a bot)
 
-## Installation
+## Quick Setup
 
 ### 1. Clone the repository
 
@@ -25,34 +24,7 @@ git clone https://github.com/yourusername/telegram_voice_journalling.git
 cd telegram_voice_journalling
 ```
 
-### 2. Create a virtual environment
-
-```bash
-# Create a virtual environment
-python3 -m venv venv
-
-# Activate the virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
-# Install required Python packages
-pip install -r requirements.txt
-
-# Install FFmpeg (required for audio processing)
-# On macOS with Homebrew:
-brew install ffmpeg
-# On Ubuntu/Debian:
-# sudo apt-get install ffmpeg
-# On Windows, download from https://ffmpeg.org/download.html
-```
-
-### 4. Create a Telegram bot
+### 2. Create a Telegram bot
 
 1. Open Telegram and search for [@BotFather](https://t.me/BotFather)
 2. Start a chat and send the command `/newbot`
@@ -61,7 +33,7 @@ brew install ffmpeg
    - Provide a username for your bot (must end with 'bot')
 4. BotFather will give you a token - copy this for the next step
 
-### 5. Configure the bot
+### 3. Configure the bot
 
 Create a `.env` file in the project directory:
 
@@ -82,44 +54,28 @@ To find your Telegram user ID:
 
 This will restrict the bot to only respond to your messages.
 
-## Usage
-
-1. Make sure your virtual environment is activated
-2. Run the bot:
+### 4. Build and run with Docker
 
 ```bash
-python voice_bot.py
-```
+# Build the Docker image
+docker build -t telegram-voice-bot .
 
-3. Open Telegram and search for your bot using its username
-4. Start a chat with your bot
-5. Send a voice message to your bot
-6. The bot will transcribe the audio and reply with the text
+# Run the container
+docker run --env-file .env telegram-voice-bot
 
-## Running with Docker
-
-Docker provides a consistent environment for running your bot across different platforms. Here's how to use it:
-
-1. Make sure Docker is installed on your system
-   - [Install Docker](https://docs.docker.com/get-docker/)
-
-2. Build the Docker image:
-   ```bash
-   docker build -t telegram-voice-bot .
-   ```
-
-3. Run the container:
-   ```bash
-   docker run --env-file .env telegram-voice-bot
-   ```
-
-### Development with Docker
-
-For development, you can mount your local code directory to see changes without rebuilding:
-
-```bash
+# Mount your local code directory to see changes without rebuilding:
 docker run --env-file .env -v $(pwd):/app telegram-voice-bot
 ```
+
+That's it! Your bot is now running and ready to transcribe voice messages.
+
+## Usage
+
+1. Open Telegram and search for your bot using its username
+2. Start a chat with your bot
+3. Send a voice message to your bot
+4. The bot will transcribe the audio and reply with the text
+
 
 ## How It Works
 
@@ -137,23 +93,27 @@ The bot uses the "tiny" Whisper model by default. You can change this to a large
 
 ```python
 # In voice_bot.py, change:
-model = whisper.load_model("tiny")
+model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
 # To one of these options (in increasing order of accuracy and resource usage):
-model = whisper.load_model("base")
-model = whisper.load_model("small")
-model = whisper.load_model("medium")
-model = whisper.load_model("large")
+model = WhisperModel("base", device="cpu", compute_type="int8")
+model = WhisperModel("small", device="cpu", compute_type="int8")
+model = WhisperModel("medium", device="cpu", compute_type="int8")
+model = WhisperModel("large", device="cpu", compute_type="int8")
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"No module named 'whisper'"**: Make sure you've installed all dependencies with `pip install -r requirements.txt`
-2. **FFmpeg errors**: Ensure FFmpeg is installed correctly on your system
-3. **Connection timeout**: Check your internet connection and verify your bot token is correct
-4. **NumPy compatibility issues**: If you encounter NumPy errors, try `pip install numpy==1.26.4` to downgrade to a compatible version
+1. **Docker not installed**: Make sure Docker is installed and running on your system
+2. **Authentication issues**: Verify your Telegram bot token and user ID in the .env file
+3. **Permission errors**: On Linux, you might need to run Docker with sudo
+4. **Connection timeout**: Check your internet connection
+
+## Alternative Setup (without Docker)
+
+If you prefer not to use Docker, see the [detailed setup instructions](SETUP_WITHOUT_DOCKER.md) for running the bot directly with Python.
 
 ## Future Extensions
 
