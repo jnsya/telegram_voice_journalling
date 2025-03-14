@@ -5,7 +5,7 @@ A Telegram bot that automatically transcribes voice messages using OpenAI's Whis
 ## Features
 
 - Receives voice messages from Telegram users
-- Transcribes audio using OpenAI's Whisper (runs locally)
+- Transcribes audio using OpenAI's Whisper (runs locally on your machine)
 - Replies with the transcribed text
 - Simple setup and configuration
 
@@ -86,6 +86,31 @@ python voice_bot.py
 4. Start a chat with your bot
 5. Send a voice message to your bot
 6. The bot will transcribe the audio and reply with the text
+
+## Running with Docker
+
+Docker provides a consistent environment for running your bot across different platforms. Here's how to use it:
+
+1. Make sure Docker is installed on your system
+   - [Install Docker](https://docs.docker.com/get-docker/)
+
+2. Build the Docker image:
+   ```bash
+   docker build -t telegram-voice-bot .
+   ```
+
+3. Run the container:
+   ```bash
+   docker run --env-file .env telegram-voice-bot
+   ```
+
+### Development with Docker
+
+For development, you can mount your local code directory to see changes without rebuilding:
+
+```bash
+docker run --env-file .env -v $(pwd):/app telegram-voice-bot
+```
 
 ## How It Works
 
