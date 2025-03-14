@@ -5,6 +5,14 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
 from dotenv import load_dotenv
 import time
+import logging
+
+# Configure logging at the top of your file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -32,7 +40,7 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Get voice note file
         voice_note = await update.message.voice.get_file()
         file_info_time = time.time()
-        print(f"Getting file info took: {file_info_time - start_time:.2f} seconds")
+        logger.info(f"Getting file info took: {file_info_time - start_time:.2f} seconds")
         
         # Generate unique filename
         file_path = VOICE_NOTES_DIR / f"voice_{update.message.message_id}.ogg"
@@ -41,7 +49,7 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_message.edit_text("Downloading voice note...")
         await voice_note.download_to_drive(file_path)
         download_time = time.time()
-        print(f"Downloading took: {download_time - file_info_time:.2f} seconds")
+        logger.info(f"Downloading took: {download_time - file_info_time:.2f} seconds")
 
         # Transcribe the audio
         await status_message.edit_text("Transcribing...")
@@ -49,7 +57,7 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         result = model.transcribe(str(file_path))
         transcription = result["text"]
         transcribe_end = time.time()
-        print(f"Transcription took: {transcribe_end - transcribe_start:.2f} seconds")
+        logger.info(f"Transcription took: {transcribe_end - transcribe_start:.2f} seconds")
 
         # Send transcription back to user
         await status_message.edit_text(f"Transcription:\n\n{transcription}")
