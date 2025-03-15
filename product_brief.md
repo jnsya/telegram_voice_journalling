@@ -24,11 +24,8 @@
 - `/help` - Comprehensive list of commands and usage instructions
 
 ### Additional Features to Consider (Future)
-- Error handling for API failures
-- `/random` - Retrieve a random past entry for reflection
 - `/continued [ID]` - Continue a previous journal entry's theme
 - `/search [keyword]` - Find entries containing specific words
-- `/delete [ID]` - Allow users to remove specific entries
 - Auto-detected emotional tone analysis
 - Simple tagging capability for organizing entries
 
